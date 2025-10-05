@@ -1,7 +1,7 @@
 // netlify/functions/submit.js
 const { google } = require('googleapis');
 const sheets = google.sheets('v4');
-const serviceAccount = require('./cleaningscheduler-5d3a005d3efe.json'); // 請放你的 Google 金鑰 json 檔案
+const serviceAccount = require('./service-account.json'); // 請放你的 Google 金鑰 json 檔案
 
 // === 需要修改 ===
 const SPREADSHEET_ID = '18FfswK_Y5qw3Fr72WwjpMEQSUyfoT2JjknHuEHswefU'; // 例：'1abc234xyz56789...'
