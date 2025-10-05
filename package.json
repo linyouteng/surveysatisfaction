@@ -1,0 +1,9 @@
+{
+  "name": "survey-satisfaction",
+  "version": "1.0.0",
+  "description": "Google Sheets Netlify Functions",
+  "main": "index.js",
+  "dependencies": {
+    "googleapis": "^118.0.0"
+  }
+}
