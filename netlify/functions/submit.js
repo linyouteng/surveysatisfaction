@@ -21,10 +21,11 @@ export default async (req, context) => {
         data = await req.json();
       } else if (ct.includes("application/x-www-form-urlencoded")) {
         const text = await req.text();
-        data = Object.fromEntries(new URLSearchParams(text));
+        const params = new URLSearchParams(text);
+        data = accumulateEntries(params.entries());
       } else if (ct.includes("multipart/form-data")) {
         const form = await req.formData();
-        data = Object.fromEntries(Array.from(form.entries()));
+        data = accumulateEntries(form.entries());
       } else {
         const text = await req.text();
         try {
@@ -240,6 +241,24 @@ export default async (req, context) => {
     });
   }
 };
+
+
+function accumulateEntries(entries) {
+  const result = {};
+  for (const [key, value] of entries) {
+    if (Object.prototype.hasOwnProperty.call(result, key)) {
+      const existing = result[key];
+      if (Array.isArray(existing)) {
+        existing.push(value);
+      } else {
+        result[key] = [existing, value];
+      }
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
 
 function escapeHtml(s) {
   return String(s)
