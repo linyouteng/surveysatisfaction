@@ -1,7 +1,7 @@
 // netlify/functions/submit.js
-// 信件內容美化版本（移除技術資訊與 JSON，時間顯示為台灣時間）
-// 需要的環境變數：BREVO_API_KEY, TO_EMAIL, FROM_EMAIL
-// 可選：SITE_NAME
+// 寫入 Google 試算表 + 寄出美化後的 Email（台灣時間）
+// 需要的環境變數：
+//   BREVO_API_KEY, TO_EMAIL, FROM_EMAIL, SITE_NAME(選用), SHEET_WEBHOOK_URL(選用)
 
 export default async (req, context) => {
   try {
@@ -12,7 +12,7 @@ export default async (req, context) => {
       });
     }
 
-    // ---- 安全解析 body（支援 JSON / urlencoded / multipart） ----
+    // ---- 解析 body（支援 JSON / urlencoded / multipart） ----
     const ct = (req.headers.get("content-type") || "").toLowerCase();
     let data = {};
 
@@ -42,11 +42,12 @@ export default async (req, context) => {
       }
     }
 
-    // ---- 環境變數與主旨 ----
+    // ---- 環境變數 ----
     const siteName = process.env.SITE_NAME || "顧客滿意度調查";
     const toEmail = process.env.TO_EMAIL;
     const fromEmail = process.env.FROM_EMAIL;
     const apiKey = process.env.BREVO_API_KEY;
+    const sheetWebhookUrl = process.env.SHEET_WEBHOOK_URL; // Google Apps Script Web App URL
 
     if (!apiKey || !toEmail || !fromEmail) {
       return new Response(
@@ -101,7 +102,7 @@ export default async (req, context) => {
       }
     }
 
-    // 產生每一列（條紋背景 + 中文標籤）
+    // 條紋列
     const rows = orderedPairs
       .filter(([k]) => !skipKeys.has(k))
       .map(([k, v], index) => {
@@ -124,11 +125,11 @@ export default async (req, context) => {
       })
       .join("");
 
-    // 送出時間（顯示為台灣時間）
+    // 送出時間（台灣時區）
     const submittedAtRaw = data.submittedAt || new Date().toISOString();
     const submittedAtDisplay = formatTaiwanTime(submittedAtRaw);
 
-    // 摘要用的幾個關鍵題目
+    // 給摘要用的幾題
     const q1 = data.q1 ? escapeHtml(String(data.q1)) : "未填";
     const q3 = data.q3 ? `${escapeHtml(String(data.q3))} / 5` : "未填";
     const q4 = data.q4 ? `${escapeHtml(String(data.q4))} / 10` : "未填";
@@ -201,7 +202,26 @@ export default async (req, context) => {
       </div>
     `;
 
-    // ---- 呼叫 Brevo API 寄信 ----
+    // ---- 寫入 Google 試算表（非必須，失敗也不會影響寄信） ----
+    try {
+      if (sheetWebhookUrl) {
+        const payload = {
+          ...data,
+          submittedAt: submittedAtRaw,
+        };
+
+        await fetch(sheetWebhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+    } catch (err) {
+      console.error("Failed to push survey to Google Sheet:", err);
+      // 不要 throw，避免阻擋寄信流程
+    }
+
+    // ---- 呼叫 Brevo 寄信 ----
     const res = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
