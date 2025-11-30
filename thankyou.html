@@ -1,23 +1,269 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>感謝您的填寫</title>
+<link href="https://res.cloudinary.com/dijzndzw2/image/upload/v1757176751/logo-3_hddq08.png" rel="icon" type="image/png"/>
+<script defer="True" src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>感謝您的回饋｜自然大叔清洗服務</title>
+  <meta name="description" content="感謝您填寫自然大叔清洗服務顧客滿意度調查，每一份回饋我們都會仔細閱讀，並據以優化未來的服務體驗。" />
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dxeoyhxx4/image/upload/v1731751003/fav_2_zaicbc.png" />
   <style>
-    body{font-family:"Microsoft JhengHei",sans-serif;background:#f6fff8;color:#2c3e50;margin:0;display:flex;align-items:center;justify-content:center;height:100vh}
-    .card{background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.1);padding:28px 32px;text-align:center;max-width:520px}
-    h1{color:#3a6d4f;margin:0 0 10px}
-    p{line-height:1.7;margin:0 0 16px}
-    a{display:inline-block;margin-top:8px;text-decoration:none;background:#3a6d4f;color:#fff;padding:10px 16px;border-radius:8px}
-    a:hover{background:#2d523c}
+    :root {
+      --bg: #f5f7fb;
+      --card-bg: #ffffff;
+      --primary: #3b82f6;
+      --accent: #22c55e;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.12);
+    }
+
+    body.dark {
+      --bg: #020617;
+      --card-bg: #020617;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --border: #1e293b;
+      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.65);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: radial-gradient(circle at top, #dbeafe 0, var(--bg) 55%);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 12px;
+    }
+
+    main {
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 24px;
+      padding: 28px 22px 24px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background: radial-gradient(circle at top right, #bfdbfe 0, transparent 55%),
+        radial-gradient(circle at bottom left, #bbf7d0 0, transparent 55%);
+      opacity: 0.28;
+      pointer-events: none;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .icon-wrap {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 12px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 30% 20%, #22c55e 0, #16a34a 40%, #0f766e 80%);
+      box-shadow: 0 14px 30px rgba(22, 163, 74, 0.6);
+      color: #ecfdf5;
+      font-size: 2rem;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 1.4rem;
+      letter-spacing: 0.03em;
+    }
+
+    .subtitle {
+      margin: 0 0 14px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .warm-text {
+      margin: 0 0 8px;
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    .promise-text {
+      margin: 0 0 18px;
+      font-size: 0.86rem;
+      line-height: 1.7;
+      color: var(--text-muted);
+    }
+
+    .promise-text strong {
+      color: var(--text-main);
+    }
+
+    .divider {
+      width: 100%;
+      max-width: 260px;
+      margin: 0 auto 18px;
+      border-bottom: 1px dashed rgba(148, 163, 184, 0.85);
+    }
+
+    .cta-main {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-size: 0.96rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #eff6ff;
+      box-shadow: 0 14px 30px rgba(37, 99, 235, 0.5);
+      transition: transform 0.12s ease-out, box-shadow 0.12s ease-out,
+        filter 0.12s ease-out;
+      margin-bottom: 8px;
+      white-space: nowrap;
+    }
+
+    .cta-main span.icon {
+      font-size: 1.1rem;
+    }
+
+    .cta-main:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+      box-shadow: 0 18px 40px rgba(37, 99, 235, 0.6);
+    }
+
+    .cta-main:active {
+      transform: translateY(0);
+      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.55);
+    }
+
+    .cta-sub {
+      margin: 0 0 4px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .links-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 6px;
+      font-size: 0.8rem;
+    }
+
+    .links-row a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+
+    .links-row a:hover {
+      text-decoration: underline;
+    }
+
+    .footer {
+      margin-top: 14px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    @media (min-width: 640px) {
+      body {
+        padding: 32px 16px;
+      }
+      .card {
+        padding: 32px 28px 26px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>✅ 感謝您的填寫！</h1>
-    <p>您的意見已成功送出，我們會持續努力提供更好的服務。</p>
-    <a href="./">回到首頁</a>
-  </div>
+  <main>
+    <div class="card">
+      <div class="card-inner">
+        <div class="icon-wrap" aria-hidden="true">✔</div>
+        <h1>已收到您的回饋！</h1>
+        <p class="subtitle">謝謝您撥空填寫問卷，您的意見對我們非常重要。</p>
+
+        <p class="warm-text">
+          每一份回覆，背後都是一次真實的服務經驗與信任，
+          我們非常珍惜您選擇自然大叔，也謝謝您願意再多花幾分鐘告訴我們心裡的感受。
+        </p>
+
+        <p class="promise-text">
+          <strong>我們承諾：</strong>所有的建議與鼓勵，我們都會逐一閱讀、定期檢視，
+          並據此調整清洗流程與服務細節，盡力讓下一次再次遇見自然大叔的您，
+          能感受到比這次更進步、更貼心的服務品質。
+        </p>
+
+        <div class="divider"></div>
+
+        <a
+          href="https://natural-uncle-official.netlify.app/"
+          class="cta-main"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="icon">🏠</span>
+          <span>回到自然大叔官方網站</span>
+        </a>
+
+        <p class="cta-sub">想了解更多服務內容、最新優惠與清洗案例，歡迎回到官方網站看看。</p>
+
+        <div class="links-row">
+          <a href="https://lin.ee/OHk6Rn7" target="_blank" rel="noopener noreferrer">加入 LINE 官方帳號</a>
+          <span>·</span>
+          <a href="https://www.facebook.com/share/LS3pQnQS1B2mPecf/" target="_blank" rel="noopener noreferrer">追蹤 Facebook</a>
+        </div>
+
+        <div class="footer">
+          自然大叔清洗服務｜期待很快能再次為您服務 💚
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // 自動套用深色模式（若系統為深色）
+    (function () {
+      try {
+        if (
+          window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches
+        ) {
+          document.body.classList.add("dark");
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+  </script>
 </body>
 </html>
