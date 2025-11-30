@@ -1,7 +1,7 @@
 // netlify/functions/submit.js
-// 更好看的信件內容（HTML 卡片樣式 + 中文標籤 + JSON 原始資料）
-// Env vars required: BREVO_API_KEY, TO_EMAIL, FROM_EMAIL
-// Optional: SITE_NAME
+// 信件內容美化版本（移除技術資訊與 JSON，時間顯示為台灣時間）
+// 需要的環境變數：BREVO_API_KEY, TO_EMAIL, FROM_EMAIL
+// 可選：SITE_NAME
 
 export default async (req, context) => {
   try {
@@ -12,7 +12,7 @@ export default async (req, context) => {
       });
     }
 
-    // ---- Parse body safely (JSON / urlencoded / multipart) ----
+    // ---- 安全解析 body（支援 JSON / urlencoded / multipart） ----
     const ct = (req.headers.get("content-type") || "").toLowerCase();
     let data = {};
 
@@ -42,7 +42,7 @@ export default async (req, context) => {
       }
     }
 
-    // ---- Env & subject ----
+    // ---- 環境變數與主旨 ----
     const siteName = process.env.SITE_NAME || "顧客滿意度調查";
     const toEmail = process.env.TO_EMAIL;
     const fromEmail = process.env.FROM_EMAIL;
@@ -61,10 +61,9 @@ export default async (req, context) => {
     const customerName =
       data.customer_name || data.name || data.line || data["姓名"] || "";
 
-    // 👉 主旨改為固定「【服務滿意度】」
     const subject = `【服務滿意度】新問卷回覆：${customerName || "未填姓名"}`;
 
-    // ---- Label map (Chinese) & output order ----
+    // ---- 題目中文標籤與輸出順序 ----
     const labelMap = {
       customer_name: "姓名 / 稱呼 / LINE",
       service_type: "清洗項目",
@@ -102,7 +101,7 @@ export default async (req, context) => {
       }
     }
 
-    // 產生每一列（帶有條紋背景 + 中文標籤）
+    // 產生每一列（條紋背景 + 中文標籤）
     const rows = orderedPairs
       .filter(([k]) => !skipKeys.has(k))
       .map(([k, v], index) => {
@@ -125,10 +124,11 @@ export default async (req, context) => {
       })
       .join("");
 
-    const submittedAt = data.submittedAt || new Date().toISOString();
-    const userAgent = data.userAgent || "";
+    // 送出時間（顯示為台灣時間）
+    const submittedAtRaw = data.submittedAt || new Date().toISOString();
+    const submittedAtDisplay = formatTaiwanTime(submittedAtRaw);
 
-    // 方便在信件上方快速看到重點（摘要區）
+    // 摘要用的幾個關鍵題目
     const q1 = data.q1 ? escapeHtml(String(data.q1)) : "未填";
     const q3 = data.q3 ? `${escapeHtml(String(data.q3))} / 5` : "未填";
     const q4 = data.q4 ? `${escapeHtml(String(data.q4))} / 10` : "未填";
@@ -143,7 +143,7 @@ export default async (req, context) => {
               customerName || "未填姓名",
             )} 的問卷結果</h2>
             <div style="margin-top:4px;font-size:12px;color:#6b7280;">
-              送出時間：<span>${escapeHtml(submittedAt)}</span>
+              送出時間：<span>${escapeHtml(submittedAtDisplay)}</span>
             </div>
           </div>
 
@@ -187,33 +187,8 @@ export default async (req, context) => {
 
             <div style="margin-top:12px;padding:10px 12px;background:#eff6ff;border-radius:8px;font-size:12px;color:#1f2937;">
               <strong style="display:block;margin-bottom:2px;">小提醒：</strong>
-              若想主動聯絡這位顧客，可優先查看上方的「姓名 / 稱呼 / LINE」與「清洗項目」、「再次委託意願」等欄位，
+              可優先查看「姓名 / 稱呼 / LINE」、「清洗項目」、「推薦意願」與「再次委託意願」欄位，
               協助判斷是否適合後續關懷或回訪。
-            </div>
-
-            <div style="margin-top:14px;">
-              <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">技術資訊</div>
-              <table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
-                <tbody>
-                  <tr style="background:#f9fafb;">
-                    <td style="width:120px;padding:6px 8px;font-weight:600;color:#111827;border-bottom:1px solid #e5e7eb;">送出時間</td>
-                    <td style="padding:6px 8px;color:#111827;border-bottom:1px solid #e5e7eb;">${escapeHtml(
-                      submittedAt,
-                    )}</td>
-                  </tr>
-                  <tr>
-                    <td style="width:120px;padding:6px 8px;font-weight:600;color:#111827;">User-Agent</td>
-                    <td style="padding:6px 8px;color:#111827;">${escapeHtml(userAgent)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div style="margin-top:14px;">
-              <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">原始資料（JSON）</div>
-              <pre style="margin:0;background:#f6f8fa;padding:12px;border-radius:6px;overflow:auto;font-size:11px;line-height:1.5;color:#111827;">${escapeHtml(
-                JSON.stringify(data, null, 2),
-              )}</pre>
             </div>
           </div>
 
@@ -226,7 +201,7 @@ export default async (req, context) => {
       </div>
     `;
 
-    // ---- Send via Brevo SMTP API ----
+    // ---- 呼叫 Brevo API 寄信 ----
     const res = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
@@ -272,4 +247,22 @@ function escapeHtml(s) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function formatTaiwanTime(value) {
+  try {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value);
+    return d.toLocaleString("zh-TW", {
+      timeZone: "Asia/Taipei",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  } catch {
+    return String(value);
+  }
 }
