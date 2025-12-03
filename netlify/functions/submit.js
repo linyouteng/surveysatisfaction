@@ -103,6 +103,7 @@ export default async (req, context) => {
     }
 
     // 產生每一列（條紋背景 + 中文標籤）
+    
     const rows = orderedPairs
       .filter(([k]) => !skipKeys.has(k))
       .map(([k, v], index) => {
@@ -111,10 +112,10 @@ export default async (req, context) => {
         const bgColor = index % 2 === 0 ? "#f9fafb" : "#ffffff";
         return `
           <tr style="background:${bgColor};">
-            <td style="padding:8px 10px;font-weight:600;color:#111827;width:170px;border-bottom:1px solid #e5e7eb;white-space:nowrap;">
+            <td style="padding:8px 10px;font-weight:600;color:#111827;font-size:13px;border-bottom:1px solid #e5e7eb;vertical-align:top;">
               ${escapeHtml(keyLabel)}
             </td>
-            <td style="padding:8px 10px;color:#111827;border-bottom:1px solid #e5e7eb;">
+            <td style="padding:8px 10px;color:#111827;font-size:13px;border-bottom:1px solid #e5e7eb;line-height:1.5;vertical-align:top;">
               ${
                 escapeHtml(val).replace(/\n/g, "<br/>") ||
                 '<span style="color:#9ca3af">(未填)</span>'
@@ -124,6 +125,7 @@ export default async (req, context) => {
         `;
       })
       .join("");
+
 
     // 送出時間（顯示為台灣時間）
     const submittedAtRaw = data.submittedAt || new Date().toISOString();
@@ -135,72 +137,102 @@ export default async (req, context) => {
     const q4 = data.q4 ? `${escapeHtml(String(data.q4))} / 10` : "未填";
     const q5 = data.q5 ? escapeHtml(String(data.q5)) : "未填";
 
+    
     const htmlContent = `
-      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f3f4f6;margin:0;padding:24px 12px;">
-        <div style="max-width:760px;margin:0 auto;background:#ffffff;border-radius:14px;border:1px solid #e5e7eb;box-shadow:0 10px 30px rgba(15,23,42,0.12);overflow:hidden;">
-          <div style="padding:18px 20px 14px;border-bottom:1px solid #e5e7eb;background:linear-gradient(135deg,#eff6ff,#fef3c7);">
-            <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">自然大叔清洗服務｜顧客滿意度新回覆</div>
-            <h2 style="margin:0;font-size:18px;color:#0f172a;">${escapeHtml(
-              customerName || "未填姓名",
-            )} 的問卷結果</h2>
-            <div style="margin-top:4px;font-size:12px;color:#6b7280;">
-              送出時間：<span>${escapeHtml(submittedAtDisplay)}</span>
-            </div>
-          </div>
+      <div style="margin:0;padding:0;background-color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td align="center" style="padding:16px 8px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:480px;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
+                <!-- Header -->
+                <tr>
+                  <td style="padding:16px 18px 14px;background:linear-gradient(135deg,#eff6ff,#fef3c7);border-bottom:1px solid #e5e7eb;">
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">自然大叔清洗服務｜顧客滿意度新回覆</div>
+                    <div style="font-size:17px;color:#0f172a;font-weight:600;line-height:1.4;margin-bottom:2px;">
+                      ${escapeHtml(customerName || "未填姓名")} 的問卷結果
+                    </div>
+                    <div style="margin-top:4px;font-size:12px;color:#6b7280;">
+                      送出時間：<span>${escapeHtml(submittedAtDisplay)}</span>
+                    </div>
+                  </td>
+                </tr>
 
-          <!-- 摘要重點區 -->
-          <div style="padding:12px 20px 4px;background:#f9fafb;">
-            <table style="width:100%;border-collapse:collapse;font-size:12px;">
-              <tr>
-                <td style="padding:6px 8px;">
-                  <div style="color:#6b7280;">整體滿意度</div>
-                  <div style="font-weight:600;color:#111827;margin-top:2px;">${q1}</div>
-                </td>
-                <td style="padding:6px 8px;">
-                  <div style="color:#6b7280;">服務人員表現</div>
-                  <div style="font-weight:600;color:#111827;margin-top:2px;">${q3}</div>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:6px 8px;">
-                  <div style="color:#6b7280;">推薦意願</div>
-                  <div style="font-weight:600;color:#111827;margin-top:2px;">${q4}</div>
-                </td>
-                <td style="padding:6px 8px;">
-                  <div style="color:#6b7280;">是否願意再次委託</div>
-                  <div style="font-weight:600;color:#111827;margin-top:2px;">${q5}</div>
-                </td>
-              </tr>
-            </table>
-          </div>
+                <!-- Summary -->
+                <tr>
+                  <td style="padding:12px 18px 10px;background-color:#f9fafb;">
+                    <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:6px;">重點摘要</div>
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
+                      <tr>
+                        <td style="padding:8px 10px;border-radius:10px;border:1px solid #e5e7eb;background-color:#ffffff;">
+                          <div style="font-size:12px;color:#6b7280;margin-bottom:2px;">整體滿意度</div>
+                          <div style="font-size:14px;color:#111827;font-weight:600;">${q1}</div>
+                        </td>
+                      </tr>
+                      <tr><td style="height:4px;font-size:0;line-height:0;"></td></tr>
+                      <tr>
+                        <td style="padding:8px 10px;border-radius:10px;border:1px solid #e5e7eb;background-color:#ffffff;">
+                          <div style="font-size:12px;color:#6b7280;margin-bottom:2px;">服務人員表現</div>
+                          <div style="font-size:14px;color:#111827;font-weight:600;">${q3}</div>
+                        </td>
+                      </tr>
+                      <tr><td style="height:4px;font-size:0;line-height:0;"></td></tr>
+                      <tr>
+                        <td style="padding:8px 10px;border-radius:10px;border:1px solid #e5e7eb;background-color:#ffffff;">
+                          <div style="font-size:12px;color:#6b7280;margin-bottom:2px;">推薦意願分數</div>
+                          <div style="font-size:14px;color:#111827;font-weight:600;">${q4}</div>
+                        </td>
+                      </tr>
+                      <tr><td style="height:4px;font-size:0;line-height:0;"></td></tr>
+                      <tr>
+                        <td style="padding:8px 10px;border-radius:10px;border:1px solid #e5e7eb;background-color:#ffffff;">
+                          <div style="font-size:12px;color:#6b7280;margin-bottom:2px;">再次委託意願</div>
+                          <div style="font-size:14px;color:#111827;font-weight:600;">${q5}</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
 
-          <!-- 詳細填答內容 -->
-          <div style="padding:14px 20px 18px;">
-            <h3 style="margin:0 0 8px;font-size:14px;color:#111827;">問卷詳細內容</h3>
-            <table style="width:100%;border-collapse:collapse;font-size:13px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
-              <tbody>
-                ${
-                  rows ||
-                  '<tr><td style="padding:10px;font-size:13px;color:#6b7280;">(沒有欄位資料)</td></tr>'
-                }
-              </tbody>
-            </table>
+                <!-- Full details -->
+                <tr>
+                  <td style="padding:14px 18px 10px;">
+                    <div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:8px;">完整問卷內容</div>
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-size:13px;">
+                      <thead>
+                        <tr style="background-color:#f3f4f6;">
+                          <th align="left" style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#374151;width:36%;">題目</th>
+                          <th align="left" style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#374151;">填答內容</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${rows}
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
 
-            <div style="margin-top:12px;padding:10px 12px;background:#eff6ff;border-radius:8px;font-size:12px;color:#1f2937;">
-              <strong style="display:block;margin-bottom:2px;">小提醒：</strong>
-              可優先查看「姓名 / 稱呼 / LINE」、「清洗項目」、「推薦意願」與「再次委託意願」欄位，
-              協助判斷是否適合後續關懷或回訪。
-            </div>
-          </div>
+                <!-- Note -->
+                <tr>
+                  <td style="padding:10px 18px 8px;background-color:#f9fafb;">
+                    <div style="font-size:11px;color:#6b7280;line-height:1.6;">
+                      本信件內容僅供服務品質追蹤與內部參考，請妥善保存顧客資訊。如需再次聯繫顧客，建議先透過 LINE 或電話確認意願與聯絡時段。
+                    </div>
+                  </td>
+                </tr>
 
-          <div style="padding:10px 20px 14px;border-top:1px solid #e5e7eb;background:#f9fafb;font-size:11px;color:#6b7280;text-align:right;">
-            此信件由「${escapeHtml(
-              siteName,
-            )}」系統自動發送。若需要調整信件格式，可修改 netlify/functions/submit.js。
-          </div>
-        </div>
+                <!-- Footer -->
+                <tr>
+                  <td style="padding:8px 18px 14px;font-size:11px;color:#9ca3af;text-align:right;border-top:1px solid #e5e7eb;background-color:#f9fafb;">
+                    此信件由「${escapeHtml(siteName)}」系統自動發送。
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </div>
     `;
+
 
     // ---- 呼叫 Brevo API 寄信 ----
     const res = await fetch("https://api.brevo.com/v3/smtp/email", {
