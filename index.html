@@ -7,6 +7,7 @@
   <meta name="description" content="自然大叔清洗服務顧客滿意度調查問卷，約需 1–2 分鐘，感謝您提供寶貴意見，幫助我們優化服務品質。" />
 
   <link rel="icon" type="image/png" href="https://res.cloudinary.com/dxeoyhxx4/image/upload/v1731751003/fav_2_zaicbc.png" />
+<link href="https://res.cloudinary.com/dijzndzw2/image/upload/v1757176751/logo-3_hddq08.png" rel="icon" type="image/png"/>
 
   <style>
     :root {
@@ -915,33 +916,65 @@
               以下問題有助於我們了解顧客對品牌整體信任與回訪意願。
             </p>
 
+            
             <div class="form-group">
               <label>Q4. 您有多大意願推薦自然大叔給親友？</label>
               <div class="range-row">
                 <div class="range-info">
-                  <div>滑桿分數越高，代表越有可能推薦。</div>
+                  <div>分數越高，代表越有可能推薦。</div>
                   <div class="helper-text">
                     1 分＝完全不會推薦，10 分＝一定會推薦。
                   </div>
+                  <div class="range-value">
+                    目前分數：<span id="q4Value">尚未選擇</span>
+                  </div>
                 </div>
-                <div class="range-control">
-                  <input
-                    type="range"
-                    id="q4"
-                    name="q4"
-                    min="1"
-                    max="10"
-                    value="5"
-                    aria-valuemin="1"
-                    aria-valuemax="10"
-                    aria-valuenow="5"
-                  />
-                  <div class="range-value" id="q4Value">5</div>
+                <div class="options options--inline" aria-label="推薦意願（1～10 分）">
+                  <label class="option-pill">
+                    <input type="radio" name="q4" value="1" />
+                    <span class="option-label-main">1 分</span>
+                  </label>
+                  <label class="option-pill">
+                    <input type="radio" name="q4" value="2" />
+                    <span class="option-label-main">2 分</span>
+                  </label>
+                  <label class="option-pill">
+                    <input type="radio" name="q4" value="3" />
+                    <span class="option-label-main">3 分</span>
+                  </label>
+                  <label class="option-pill">
+                    <input type="radio" name="q4" value="4" />
+                    <span class="option-label-main">4 分</span>
+                  </label>
+                  <label class="option-pill">
+                    <input type="radio" name="q4" value="5" />
+                    <span class="option-label-main">5 分</span>
+                  </label>
+                  <label class="option-pill">
+                    <input type="radio" name="q4" value="6" />
+                    <span class="option-label-main">6 分</span>
+                  </label>
+                  <label class="option-pill">
+                    <input type="radio" name="q4" value="7" />
+                    <span class="option-label-main">7 分</span>
+                  </label>
+                  <label class="option-pill">
+                    <input type="radio" name="q4" value="8" />
+                    <span class="option-label-main">8 分</span>
+                  </label>
+                  <label class="option-pill">
+                    <input type="radio" name="q4" value="9" />
+                    <span class="option-label-main">9 分</span>
+                  </label>
+                  <label class="option-pill">
+                    <input type="radio" name="q4" value="10" />
+                    <span class="option-label-main">10 分</span>
+                  </label>
                 </div>
               </div>
             </div>
 
-            <div class="form-group">
+<div class="form-group">
               <label>Q5. 未來若有清洗需求，您是否願意再次委託自然大叔？</label>
               <div class="options options--inline">
                 <label class="option-pill">
@@ -1063,33 +1096,34 @@
       var progressBar = document.getElementById("progressBar");
       var progressContainer = document.getElementById("progressContainer");
       var backdrop = document.getElementById("loadingBackdrop");
-      var q4Input = document.getElementById("q4");
       var q4Value = document.getElementById("q4Value");
       var coreNames = ["q1", "q2", "q3", "q4", "q5"]; // 核心題目
-      var rangeTouched = false;
 
       if (!form) return;
 
-      // 更新進度條
+            // 更新進度條
       function updateProgress() {
         var total = coreNames.length;
         var answered = 0;
 
         coreNames.forEach(function (name) {
-          if (name === "q4") {
-            if (rangeTouched) {
-              answered++;
-            }
-            return;
-          }
-
           var elements = form.querySelectorAll('[name="' + name + '"]');
           if (!elements.length) return;
 
           var hasValue = false;
 
           elements.forEach(function (el) {
-            if (el.type === "radio" && el.checked) {
+            if ((el.type === "radio" || el.type === "checkbox") && el.checked) {
+              hasValue = true;
+            } else if (
+              (el.tagName === "INPUT" ||
+                el.tagName === "TEXTAREA" ||
+                el.tagName === "SELECT") &&
+              el.type !== "radio" &&
+              el.type !== "checkbox" &&
+              el.value &&
+              String(el.value).trim() !== ""
+            ) {
               hasValue = true;
             }
           });
@@ -1110,23 +1144,29 @@
         }
       }
 
-      // 更新 Q4 顯示值
-      function updateRangeValue() {
-        if (!q4Input || !q4Value) return;
-        q4Value.textContent = q4Input.value;
-        q4Input.setAttribute("aria-valuenow", q4Input.value);
+      // 更新 Q4 顯示值（點選 1～10 分）
+      function updateQ4Value() {
+        if (!form || !q4Value) return;
+        var checked = form.querySelector('input[name="q4"]:checked');
+        if (checked && checked.value) {
+          q4Value.textContent = checked.value;
+        } else {
+          q4Value.textContent = "尚未選擇";
+        }
       }
 
-      if (q4Input) {
-        q4Input.addEventListener("input", function () {
-          rangeTouched = true;
-          updateRangeValue();
-          updateProgress();
+      var q4Radios = form ? form.querySelectorAll('input[name="q4"]') : null;
+      if (q4Radios && q4Radios.length) {
+        q4Radios.forEach(function (radio) {
+          radio.addEventListener("change", function () {
+            updateQ4Value();
+            updateProgress();
+          });
         });
-        updateRangeValue();
+        updateQ4Value();
       }
 
-      // 對核心題目的 input / radio 做監聽
+// 對核心題目的 input / radio 做監聽
       var allInputs = form.querySelectorAll("input, textarea");
       allInputs.forEach(function (el) {
         if (coreNames.indexOf(el.name) !== -1 && el.type !== "range") {
