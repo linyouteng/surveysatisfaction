@@ -68,7 +68,9 @@ export default async (req, context) => {
     const labelMap = {
       customer_name: "姓名 / 稱呼 / LINE",
       service_type: "清洗項目",
+      service_type_other: "其他清洗項目補充",
       source: "認識自然大叔的管道",
+      source_other: "其他認識管道補充",
       q1: "Q1 服務整體滿意度",
       q2: "Q2 服務人員專業程度",
       q2_extra: "Q2 補充說明",
@@ -87,25 +89,39 @@ export default async (req, context) => {
       "submittedAt",
     ]);
 
+    const mergedData = { ...data };
+
+    mergedData.service_type = mergeOtherIntoBase(
+      data.service_type,
+      data.service_type_other,
+      "其他"
+    );
+    mergedData.source = mergeOtherIntoBase(
+      data.source,
+      data.source_other,
+      "其他"
+    );
+
     // 先依 labelMap 的順序輸出，再補上其他欄位
     const orderedPairs = [];
 
     for (const key of Object.keys(labelMap)) {
-      if (key in data) {
-        orderedPairs.push([key, data[key]]);
+      if (key in mergedData) {
+        orderedPairs.push([key, mergedData[key]]);
       }
     }
 
-    for (const [k, v] of Object.entries(data)) {
+    for (const [k, v] of Object.entries(mergedData)) {
       if (!labelMap.hasOwnProperty(k)) {
         orderedPairs.push([k, v]);
       }
     }
 
+    const mergedHiddenKeys = new Set(["service_type_other", "source_other"]);
+
     // 產生每一列（條紋背景 + 中文標籤）
-    
     const rows = orderedPairs
-      .filter(([k]) => !skipKeys.has(k))
+      .filter(([k]) => !skipKeys.has(k) && !mergedHiddenKeys.has(k))
       .map(([k, v], index) => {
         const keyLabel = labelMap[k] || k;
         const val = Array.isArray(v) ? v.join(", ") : String(v ?? "");
@@ -290,6 +306,28 @@ function accumulateEntries(entries) {
     }
   }
   return result;
+}
+
+
+function mergeOtherIntoBase(baseValue, otherValue, otherLabel = "其他") {
+  const otherText = String(otherValue ?? "").trim();
+  const baseList = Array.isArray(baseValue)
+    ? [...baseValue]
+    : baseValue == null || baseValue === ""
+      ? []
+      : [String(baseValue)];
+
+  const normalizedList = baseList.map((item) => String(item ?? "").trim()).filter(Boolean);
+  const hasOther = normalizedList.includes(otherLabel);
+
+  if (!hasOther) {
+    return Array.isArray(baseValue) ? normalizedList : (normalizedList[0] || "");
+  }
+
+  const mergedLabel = otherText ? `${otherLabel}（${otherText}）` : otherLabel;
+  const mergedList = normalizedList.map((item) => (item === otherLabel ? mergedLabel : item));
+
+  return Array.isArray(baseValue) ? mergedList : (mergedList[0] || "");
 }
 
 function escapeHtml(s) {

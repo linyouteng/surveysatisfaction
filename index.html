@@ -462,6 +462,24 @@
       color: var(--text-muted);
     }
 
+    .conditional-input {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(-4px);
+      margin-top: 0;
+      pointer-events: none;
+      transition: max-height 0.22s ease, opacity 0.18s ease, transform 0.18s ease, margin-top 0.18s ease;
+    }
+
+    .conditional-input.show {
+      max-height: 180px;
+      opacity: 1;
+      transform: translateY(0);
+      margin-top: 10px;
+      pointer-events: auto;
+    }
+
     .helper-text strong {
       color: var(--text-main);
     }
@@ -776,9 +794,20 @@
                   <span class="option-label-main">自來水管</span>
                 </label>
                 <label class="option-pill">
-                  <input type="checkbox" name="service_type" value="其他" />
+                  <input type="checkbox" name="service_type" value="其他" id="serviceTypeOtherToggle" />
                   <span class="option-label-main">其他</span>
                 </label>
+              </div>
+              <div id="serviceTypeOtherWrap" class="conditional-input" aria-hidden="true">
+                <label for="service_type_other">其他清洗項目（可填寫也可不填寫）</label>
+                <input
+                  type="text"
+                  id="service_type_other"
+                  name="service_type_other"
+                  placeholder="例：沙發、床墊、除蟎等"
+                  disabled
+                />
+                <div class="label-meta">勾選「其他」後會顯示此欄位，想補充再填即可，不填也可以送出。</div>
               </div>
               <div class="helper-text">若多項服務，可勾選多個項目。</div>
             </div>
@@ -803,9 +832,20 @@
                   <span class="option-label-main">Google 搜尋</span>
                 </label>
                 <label class="option-pill">
-                  <input type="radio" name="source" value="其他" />
+                  <input type="radio" name="source" value="其他" id="sourceOtherToggle" />
                   <span class="option-label-main">其他</span>
                 </label>
+              </div>
+              <div id="sourceOtherWrap" class="conditional-input" aria-hidden="true">
+                <label for="source_other">其他認識管道（可填寫也可不填寫）</label>
+                <input
+                  type="text"
+                  id="source_other"
+                  name="source_other"
+                  placeholder="例：Instagram、社區介紹、路過看到等"
+                  disabled
+                />
+                <div class="label-meta">選擇「其他」後會顯示此欄位，若想補充來源再填寫即可。</div>
               </div>
             </div>
           </fieldset>
@@ -1155,6 +1195,48 @@
         }
       }
 
+      function toggleConditionalInput(toggleEl, wrapEl, inputEl) {
+        if (!wrapEl || !inputEl) return;
+
+        var shouldShow = !!(toggleEl && toggleEl.checked);
+        wrapEl.classList.toggle("show", shouldShow);
+        wrapEl.setAttribute("aria-hidden", shouldShow ? "false" : "true");
+        inputEl.disabled = !shouldShow;
+
+        if (shouldShow) {
+          setTimeout(function () {
+            try {
+              inputEl.focus();
+            } catch (e) {}
+          }, 0);
+        } else {
+          inputEl.value = "";
+        }
+      }
+
+      var serviceTypeOtherToggle = document.getElementById("serviceTypeOtherToggle");
+      var serviceTypeOtherWrap = document.getElementById("serviceTypeOtherWrap");
+      var serviceTypeOtherInput = document.getElementById("service_type_other");
+      var sourceOtherWrap = document.getElementById("sourceOtherWrap");
+      var sourceOtherInput = document.getElementById("source_other");
+
+      function updateServiceTypeOther() {
+        toggleConditionalInput(
+          serviceTypeOtherToggle,
+          serviceTypeOtherWrap,
+          serviceTypeOtherInput
+        );
+      }
+
+      function updateSourceOther() {
+        var checkedSource = form.querySelector('input[name="source"]:checked');
+        toggleConditionalInput(
+          checkedSource && checkedSource.value === "其他" ? checkedSource : null,
+          sourceOtherWrap,
+          sourceOtherInput
+        );
+      }
+
       var q4Radios = form ? form.querySelectorAll('input[name="q4"]') : null;
       if (q4Radios && q4Radios.length) {
         q4Radios.forEach(function (radio) {
@@ -1165,6 +1247,20 @@
         });
         updateQ4Value();
       }
+
+      if (serviceTypeOtherToggle) {
+        serviceTypeOtherToggle.addEventListener("change", updateServiceTypeOther);
+      }
+
+      var sourceRadios = form.querySelectorAll('input[name="source"]');
+      if (sourceRadios && sourceRadios.length) {
+        sourceRadios.forEach(function (radio) {
+          radio.addEventListener("change", updateSourceOther);
+        });
+      }
+
+      updateServiceTypeOther();
+      updateSourceOther();
 
 // 對核心題目的 input / radio 做監聽
       var allInputs = form.querySelectorAll("input, textarea");
