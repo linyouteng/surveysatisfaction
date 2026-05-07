@@ -534,6 +534,178 @@
       color: var(--text-muted);
     }
 
+
+
+    .feature-section {
+      margin-top: 20px;
+      padding: 16px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+    }
+
+    body.dark .feature-section {
+      background: rgba(15, 23, 42, 0.72);
+    }
+
+    .feature-heading {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-copy {
+      margin: 0 0 12px;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+
+    .reviews-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    @media (min-width: 640px) {
+      .reviews-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    .review-card {
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.42);
+      background: rgba(255, 255, 255, 0.86);
+    }
+
+    body.dark .review-card {
+      background: rgba(2, 6, 23, 0.78);
+    }
+
+    .review-stars {
+      margin-bottom: 6px;
+      color: #f59e0b;
+      letter-spacing: 0.04em;
+      font-size: 0.86rem;
+    }
+
+    .review-text {
+      margin: 0 0 8px;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      color: var(--text-main);
+    }
+
+    .review-name {
+      margin: 0;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    .estimator-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 680px) {
+      .estimator-layout {
+        grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
+        align-items: start;
+      }
+    }
+
+    .estimate-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (min-width: 540px) {
+      .estimate-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .estimate-item {
+      display: grid;
+      grid-template-columns: 1fr 76px;
+      gap: 8px;
+      align-items: center;
+      padding: 9px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.46);
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    body.dark .estimate-item {
+      background: rgba(2, 6, 23, 0.72);
+    }
+
+    .estimate-item label {
+      margin: 0;
+      font-size: 0.82rem;
+    }
+
+    .estimate-item input[type="number"],
+    .estimate-item select {
+      padding: 7px 8px;
+      border-radius: 10px;
+      text-align: center;
+      width: 100%;
+    }
+
+    .addon-row {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .estimate-result {
+      border-radius: 18px;
+      padding: 14px;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(59, 130, 246, 0.14));
+      border: 1px solid rgba(59, 130, 246, 0.22);
+      position: sticky;
+      top: 12px;
+    }
+
+    .estimate-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .estimate-price {
+      margin: 0 0 6px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+
+    .estimate-note {
+      margin: 0 0 10px;
+      font-size: 0.78rem;
+      line-height: 1.55;
+      color: var(--text-muted);
+    }
+
+    .estimate-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+    }
+
     .contact {
       margin-top: 20px;
       padding-top: 12px;
@@ -1064,6 +1236,99 @@
           </div>
         </form>
 
+
+        <section class="feature-section reviews-section" aria-label="顧客評價展示">
+          <h2 class="feature-heading">⭐ 顧客怎麼說</h2>
+          <p class="feature-copy">以下文字可依照真實顧客回饋調整，讓第一次看到網站的人更快建立信任感。</p>
+          <div class="reviews-grid">
+            <article class="review-card">
+              <div class="review-stars" aria-label="五星評價">★★★★★</div>
+              <p class="review-text">「師傅很準時，清洗前後都有說明，冷氣洗完味道改善很多。」</p>
+              <p class="review-name">— 台中｜王小姐</p>
+            </article>
+            <article class="review-card">
+              <div class="review-stars" aria-label="五星評價">★★★★★</div>
+              <p class="review-text">「價格透明，現場有狀況也會先溝通，不會亂加價，服務很安心。」</p>
+              <p class="review-name">— 彰化｜陳先生</p>
+            </article>
+            <article class="review-card">
+              <div class="review-stars" aria-label="五星評價">★★★★★</div>
+              <p class="review-text">「洗衣機拆洗後才知道裡面這麼髒，清完真的有感，會再預約。」</p>
+              <p class="review-name">— 南投｜林小姐</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="feature-section estimator-section" aria-label="清洗費用快速試算">
+          <h2 class="feature-heading">🧮 清洗費用快速試算</h2>
+          <p class="feature-copy">依照自然大叔目前公開價目表快速估算。實際金額仍會依機型、迴路、樓層與現場施工條件，由客服確認後才安排施工。</p>
+          <div class="estimator-layout">
+            <div>
+              <div class="estimate-grid">
+                <div class="estimate-item">
+                  <label for="estimate_ac">分離式冷氣<br><small>1～2 台每台 1,800；3 台以上每台 1,500</small></label>
+                  <input id="estimate_ac" class="estimate-input" type="number" min="0" max="99" value="0" data-type="split-ac" />
+                </div>
+                <div class="estimate-item">
+                  <label for="estimate_duct_ac">吊隱式冷氣<br><small>每台 2,800</small></label>
+                  <input id="estimate_duct_ac" class="estimate-input" type="number" min="0" max="99" value="0" data-price="2800" />
+                </div>
+                <div class="estimate-item">
+                  <label for="estimate_washer">直立式洗衣機清洗<br><small>每台 2,000</small></label>
+                  <input id="estimate_washer" class="estimate-input" type="number" min="0" max="99" value="0" data-price="2000" />
+                </div>
+                <div class="estimate-item">
+                  <label for="estimate_tank">家用水塔清洗<br><small>每顆 1,000</small></label>
+                  <input id="estimate_tank" class="estimate-input" type="number" min="0" max="99" value="0" data-price="1000" />
+                </div>
+                <div class="estimate-item">
+                  <label for="estimate_pipe_plan">自來水管清洗保養</label>
+                  <select id="estimate_pipe_plan" class="estimate-select">
+                    <option value="0">不需要</option>
+                    <option value="3200">無廚一衛｜3,200</option>
+                    <option value="4200">一廚一衛｜4,200</option>
+                  </select>
+                </div>
+                <div class="estimate-item">
+                  <label for="estimate_pipe_extra_kw">水管加廚/加衛<br><small>每增加一廚或一衛 +500</small></label>
+                  <input id="estimate_pipe_extra_kw" class="estimate-input" type="number" min="0" max="99" value="0" data-price="500" />
+                </div>
+                <div class="estimate-item">
+                  <label for="estimate_pipe_extra_loop">水管多迴路<br><small>每多一迴路 +1,000</small></label>
+                  <input id="estimate_pipe_extra_loop" class="estimate-input" type="number" min="0" max="99" value="0" data-price="1000" />
+                </div>
+                <div class="estimate-item">
+                  <label for="estimate_floor_extra">五樓以上加收樓層<br><small>每層 +1,000</small></label>
+                  <input id="estimate_floor_extra" class="estimate-input" type="number" min="0" max="99" value="0" data-price="1000" />
+                </div>
+              </div>
+              <div class="addon-row">
+                <label class="option-pill">
+                  <input class="estimate-addon" type="checkbox" data-price="300" data-multiply-by="estimate_ac" />
+                  <span class="option-label-main">冷氣防黴處理｜每台 300</span>
+                </label>
+                <label class="option-pill">
+                  <input class="estimate-addon" type="checkbox" data-price="200" data-quantity-input="estimate_ozone_rooms" />
+                  <span class="option-label-main">臭氧全面消毒｜每間房 200</span>
+                </label>
+                <div class="estimate-item">
+                  <label for="estimate_ozone_rooms">臭氧消毒房間數</label>
+                  <input id="estimate_ozone_rooms" type="number" min="0" max="99" value="0" />
+                </div>
+              </div>
+            </div>
+            <aside class="estimate-result" aria-live="polite">
+              <div class="estimate-label">目前預估費用</div>
+              <p id="estimatePrice" class="estimate-price">NT$ 0</p>
+              <p class="estimate-note">此為前台快速估算，分離式冷氣會自動套用三台以上每台 1,500 的團購價。若洗衣機同時清洗冷氣、水塔同時清洗自來水管，優惠會由客服確認。</p>
+              <ul class="estimate-list">
+                <li>特殊機型如變形金剛系列、富士通一體式水盤、室內機超過 182 cm，現場可能需依價目加收。</li>
+                <li>送出問卷後，也可直接加入 LINE 預約或詢價。</li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+
         <section class="contact" aria-label="聯絡自然大叔">
           <h3>📱 聯絡我們｜自然大叔</h3>
           <p>若有其他問題或服務需求，也歡迎透過以下方式與我們聯繫：</p>
@@ -1140,6 +1405,62 @@
       var coreNames = ["q1", "q2", "q3", "q4", "q5"]; // 核心題目
 
       if (!form) return;
+
+
+      function formatCurrency(amount) {
+        return "NT$ " + Math.round(amount).toLocaleString("zh-TW");
+      }
+
+      function updateEstimate() {
+        var inputs = document.querySelectorAll(".estimate-input");
+        var selects = document.querySelectorAll(".estimate-select");
+        var addons = document.querySelectorAll(".estimate-addon");
+        var target = document.getElementById("estimatePrice");
+        if (!target) return;
+
+        var subtotal = 0;
+        inputs.forEach(function (input) {
+          var qty = Math.max(0, Number(input.value || 0));
+          var type = input.getAttribute("data-type");
+          var price = Number(input.getAttribute("data-price") || 0);
+
+          if (type === "split-ac") {
+            price = qty >= 3 ? 1500 : 1800;
+          }
+
+          subtotal += qty * price;
+        });
+
+        selects.forEach(function (select) {
+          subtotal += Number(select.value || 0);
+        });
+
+        addons.forEach(function (addon) {
+          if (!addon.checked) return;
+          var price = Number(addon.getAttribute("data-price") || 0);
+          var multiplyBy = addon.getAttribute("data-multiply-by");
+          var quantityInputId = addon.getAttribute("data-quantity-input");
+
+          if (multiplyBy) {
+            var source = document.getElementById(multiplyBy);
+            var sourceQty = source ? Math.max(0, Number(source.value || 0)) : 0;
+            subtotal += price * sourceQty;
+            return;
+          }
+
+          if (quantityInputId) {
+            var qtyInput = document.getElementById(quantityInputId);
+            var qty = qtyInput ? Math.max(0, Number(qtyInput.value || 0)) : 0;
+            subtotal += price * qty;
+            return;
+          }
+
+          subtotal += price;
+        });
+
+        target.textContent = formatCurrency(subtotal);
+      }
+
 
             // 更新進度條
       function updateProgress() {
@@ -1271,6 +1592,13 @@
         }
       });
 
+      var estimateControls = document.querySelectorAll(".estimate-input, .estimate-select, .estimate-addon, #estimate_ozone_rooms");
+      estimateControls.forEach(function (el) {
+        el.addEventListener("input", updateEstimate);
+        el.addEventListener("change", updateEstimate);
+      });
+      updateEstimate();
+
       updateProgress();
 
       form.addEventListener("submit", function (e) {
@@ -1288,6 +1616,7 @@
         }
 
         var formData = new FormData(form);
+        formData.append("submittedAt", new Date().toISOString());
 
         fetch(form.action || "/api/submit", {
           method: "POST",

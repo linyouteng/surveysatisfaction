@@ -62,7 +62,10 @@ export default async (req, context) => {
     const customerName =
       data.customer_name || data.name || data.line || data["姓名"] || "";
 
-    const subject = `【服務滿意度】新問卷回覆：${customerName || "未填姓名"}`;
+    const followUpInfo = buildFollowUpInfo(data);
+    const npsLabel = getNpsLabel(data.q4);
+    const subjectPrefix = followUpInfo.needsFollowUp ? "【需要關注】" : "【服務滿意度】";
+    const subject = `${subjectPrefix}新問卷回覆：${customerName || "未填姓名"}`;
 
     // ---- 題目中文標籤與輸出順序 ----
     const labelMap = {
@@ -152,6 +155,30 @@ export default async (req, context) => {
     const q3 = data.q3 ? `${escapeHtml(String(data.q3))} / 5` : "未填";
     const q4 = data.q4 ? `${escapeHtml(String(data.q4))} / 10` : "未填";
     const q5 = data.q5 ? escapeHtml(String(data.q5)) : "未填";
+    const followUpReasonsHtml = followUpInfo.reasons
+      .map((reason) => `<li style="margin:0 0 4px;">${escapeHtml(reason)}</li>`)
+      .join("");
+    const followUpAlertHtml = followUpInfo.needsFollowUp
+      ? `
+        <tr>
+          <td style="padding:12px 18px 0;background-color:#f9fafb;">
+            <div style="border:1px solid #fecaca;background:#fef2f2;border-radius:12px;padding:10px 12px;color:#7f1d1d;">
+              <div style="font-size:13px;font-weight:700;margin-bottom:5px;">⚠️ 需要優先關心的回覆</div>
+              <div style="font-size:12px;line-height:1.6;margin-bottom:6px;">此顧客的部分答案偏低，建議 24 小時內主動關心，了解是否有可補救或改善的地方。</div>
+              <ul style="margin:0;padding-left:18px;font-size:12px;line-height:1.5;">${followUpReasonsHtml}</ul>
+            </div>
+          </td>
+        </tr>
+      `
+      : `
+        <tr>
+          <td style="padding:12px 18px 0;background-color:#f9fafb;">
+            <div style="border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px;padding:10px 12px;color:#14532d;font-size:12px;line-height:1.6;">
+              ✅ 目前未偵測到明顯低分警訊，可視情況邀請顧客留下公開評價或再次預約。
+            </div>
+          </td>
+        </tr>
+      `;
 
     
     const htmlContent = `
@@ -172,6 +199,8 @@ export default async (req, context) => {
                     </div>
                   </td>
                 </tr>
+
+                ${followUpAlertHtml}
 
                 <!-- Summary -->
                 <tr>
@@ -203,6 +232,13 @@ export default async (req, context) => {
                         <td style="padding:8px 10px;border-radius:10px;border:1px solid #e5e7eb;background-color:#ffffff;">
                           <div style="font-size:12px;color:#6b7280;margin-bottom:2px;">再次委託意願</div>
                           <div style="font-size:14px;color:#111827;font-weight:600;">${q5}</div>
+                        </td>
+                      </tr>
+                      <tr><td style="height:4px;font-size:0;line-height:0;"></td></tr>
+                      <tr>
+                        <td style="padding:8px 10px;border-radius:10px;border:1px solid #e5e7eb;background-color:#ffffff;">
+                          <div style="font-size:12px;color:#6b7280;margin-bottom:2px;">NPS 分類 / 追蹤狀態</div>
+                          <div style="font-size:14px;color:#111827;font-weight:600;">${escapeHtml(npsLabel)}｜${followUpInfo.needsFollowUp ? "需要主動關心" : "一般追蹤"}</div>
                         </td>
                       </tr>
                     </table>
@@ -277,7 +313,7 @@ export default async (req, context) => {
       );
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
+    return new Response(JSON.stringify({ ok: true, needsFollowUp: followUpInfo.needsFollowUp }), {
       status: 200,
       headers: { "content-type": "application/json; charset=utf-8" },
     });
@@ -328,6 +364,45 @@ function mergeOtherIntoBase(baseValue, otherValue, otherLabel = "其他") {
   const mergedList = normalizedList.map((item) => (item === otherLabel ? mergedLabel : item));
 
   return Array.isArray(baseValue) ? mergedList : (mergedList[0] || "");
+}
+
+
+function buildFollowUpInfo(data) {
+  const reasons = [];
+  const q1 = String(data.q1 || "").trim();
+  const q2 = String(data.q2 || "").trim();
+  const q3 = Number(data.q3 || 0);
+  const q4 = Number(data.q4 || 0);
+  const q5 = String(data.q5 || "").trim();
+
+  if (["不太滿意", "非常不滿意"].includes(q1)) {
+    reasons.push(`Q1 整體滿意度偏低：${q1}`);
+  }
+  if (["不太專業", "非常不專業"].includes(q2)) {
+    reasons.push(`Q2 專業程度偏低：${q2}`);
+  }
+  if (q3 > 0 && q3 <= 3) {
+    reasons.push(`Q3 服務人員表現為 ${q3} / 5`);
+  }
+  if (q4 > 0 && q4 <= 6) {
+    reasons.push(`Q4 推薦意願為 ${q4} / 10（NPS 批評者）`);
+  }
+  if (["可能不會", "不會"].includes(q5)) {
+    reasons.push(`Q5 再次委託意願偏低：${q5}`);
+  }
+
+  return {
+    needsFollowUp: reasons.length > 0,
+    reasons,
+  };
+}
+
+function getNpsLabel(value) {
+  const score = Number(value || 0);
+  if (!score) return "未分類";
+  if (score >= 9) return "推薦者";
+  if (score >= 7) return "中立者";
+  return "批評者";
 }
 
 function escapeHtml(s) {
