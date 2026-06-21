@@ -407,6 +407,7 @@ function buildLineMessage({ siteName, customerName, submittedAtDisplay, followUp
   const source = valueToText(mergedData.source) || "未填";
   const q1 = valueToText(data.q1) || "未填";
   const q2 = valueToText(data.q2) || "未填";
+  const q2Extra = valueToText(data.q2_extra) || "未填";
   const q3 = valueToText(data.q3) || "未填";
   const q4 = valueToText(data.q4) || "未填";
   const q5 = valueToText(data.q5) || "未填";
@@ -425,6 +426,8 @@ ${siteName}
 
 整體滿意度：${q1}
 專業程度：${q2}
+服務人員補充說明：
+${q2Extra}
 服務表現：${q3} / 5
 推薦意願：${q4} / 10（${npsLabel}）
 再次委託：${q5}
