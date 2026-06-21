@@ -1,7 +1,8 @@
 // netlify/functions/submit.js
 // 信件內容美化版本（移除技術資訊與 JSON，時間顯示為台灣時間）
-// 需要的環境變數：BREVO_API_KEY, TO_EMAIL, FROM_EMAIL
+// 通知用環境變數：BREVO_API_KEY, TO_EMAIL, FROM_EMAIL, LINE_CHANNEL_ACCESS_TOKEN, LINE_ADMIN_USER_ID
 // 可選：SITE_NAME
+// 注意：通知失敗不會阻擋客人送出表單
 
 export default async (req, context) => {
   try {
@@ -48,16 +49,12 @@ export default async (req, context) => {
     const toEmail = process.env.TO_EMAIL;
     const fromEmail = process.env.FROM_EMAIL;
     const apiKey = process.env.BREVO_API_KEY;
+    const lineChannelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+    const lineAdminUserId = process.env.LINE_ADMIN_USER_ID;
 
-    if (!apiKey || !toEmail || !fromEmail) {
-      return new Response(
-        JSON.stringify({
-          error:
-            "Missing environment variables. Please configure BREVO_API_KEY, TO_EMAIL, FROM_EMAIL.",
-        }),
-        { status: 500, headers: { "content-type": "application/json; charset=utf-8" } },
-      );
-    }
+    // 通知設定改成「有設定就送，沒設定或失敗都不擋客人送出」
+    const brevoConfigured = Boolean(apiKey && toEmail && fromEmail);
+    const lineConfigured = Boolean(lineChannelAccessToken && lineAdminUserId);
 
     const customerName =
       data.customer_name || data.name || data.line || data["姓名"] || "";
@@ -286,37 +283,68 @@ export default async (req, context) => {
     `;
 
 
-    // ---- 呼叫 Brevo API 寄信 ----
-    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "api-key": apiKey,
-        accept: "application/json",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        sender: { email: fromEmail, name: siteName },
-        to: [{ email: toEmail }],
-        subject,
-        htmlContent,
-      }),
+    // ---- 通知：Brevo / LINE 都改成失敗不阻擋送出 ----
+    const lineText = buildLineMessage({
+      siteName,
+      customerName,
+      submittedAtDisplay,
+      followUpInfo,
+      npsLabel,
+      data,
+      mergedData,
     });
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      return new Response(
-        JSON.stringify({ error: "Brevo API error", details: errText }),
-        {
-          status: 502,
-          headers: { "content-type": "application/json; charset=utf-8" },
-        },
+    const notificationResults = {
+      brevo: brevoConfigured ? "pending" : "skipped_missing_env",
+      line: lineConfigured ? "pending" : "skipped_missing_env",
+    };
+
+    const tasks = [];
+
+    if (brevoConfigured) {
+      tasks.push(
+        sendBrevoEmail({ apiKey, fromEmail, toEmail, siteName, subject, htmlContent })
+          .then(() => {
+            notificationResults.brevo = "sent";
+          })
+          .catch((err) => {
+            notificationResults.brevo = "failed";
+            console.error("Brevo notification failed:", err);
+          })
       );
     }
 
-    return new Response(JSON.stringify({ ok: true, needsFollowUp: followUpInfo.needsFollowUp }), {
-      status: 200,
-      headers: { "content-type": "application/json; charset=utf-8" },
-    });
+    if (lineConfigured) {
+      tasks.push(
+        sendLinePush({
+          channelAccessToken: lineChannelAccessToken,
+          userId: lineAdminUserId,
+          text: lineText,
+        })
+          .then(() => {
+            notificationResults.line = "sent";
+          })
+          .catch((err) => {
+            notificationResults.line = "failed";
+            console.error("LINE notification failed:", err);
+          })
+      );
+    }
+
+    await Promise.allSettled(tasks);
+
+    // 重點：不管通知成功/失敗，客人端都會得到成功，前端就會跳 thankyou.html
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        needsFollowUp: followUpInfo.needsFollowUp,
+        notifications: notificationResults,
+      }),
+      {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      },
+    );
   } catch (err) {
     console.error("Submit function error:", err);
     return new Response(JSON.stringify({ error: String(err) }), {
@@ -326,6 +354,96 @@ export default async (req, context) => {
   }
 };
 
+
+async function sendBrevoEmail({ apiKey, fromEmail, toEmail, siteName, subject, htmlContent }) {
+  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "api-key": apiKey,
+      accept: "application/json",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      sender: { email: fromEmail, name: siteName },
+      to: [{ email: toEmail }],
+      subject,
+      htmlContent,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Brevo API error ${res.status}: ${errText}`);
+  }
+}
+
+async function sendLinePush({ channelAccessToken, userId, text }) {
+  const res = await fetch("https://api.line.me/v2/bot/message/push", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${channelAccessToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      to: userId,
+      messages: [
+        {
+          type: "text",
+          text: trimLineText(text),
+        },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`LINE push error ${res.status}: ${errText}`);
+  }
+}
+
+function buildLineMessage({ siteName, customerName, submittedAtDisplay, followUpInfo, npsLabel, data, mergedData }) {
+  const title = followUpInfo.needsFollowUp ? "⚠️ 新問卷回覆｜需要關注" : "✅ 新問卷回覆";
+  const serviceType = valueToText(mergedData.service_type) || "未填";
+  const source = valueToText(mergedData.source) || "未填";
+  const q1 = valueToText(data.q1) || "未填";
+  const q2 = valueToText(data.q2) || "未填";
+  const q3 = valueToText(data.q3) || "未填";
+  const q4 = valueToText(data.q4) || "未填";
+  const q5 = valueToText(data.q5) || "未填";
+  const q6 = valueToText(data.q6) || "未填";
+  const reasons = followUpInfo.reasons.length
+    ? `\n\n需關注原因：\n${followUpInfo.reasons.map((reason) => `・${reason}`).join("\n")}`
+    : "";
+
+  return `${title}
+${siteName}
+
+姓名：${customerName || "未填姓名"}
+清洗項目：${serviceType}
+認識管道：${source}
+送出時間：${submittedAtDisplay}
+
+整體滿意度：${q1}
+專業程度：${q2}
+服務表現：${q3} / 5
+推薦意願：${q4} / 10（${npsLabel}）
+再次委託：${q5}
+
+建議 / 鼓勵：
+${q6}${reasons}`;
+}
+
+function valueToText(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item ?? "").trim()).filter(Boolean).join("、");
+  return String(value ?? "").trim();
+}
+
+function trimLineText(text) {
+  // LINE text message 上限通常足夠放摘要；保守截斷避免超長回饋造成通知失敗
+  const maxLength = 4500;
+  const safeText = String(text || "").trim();
+  return safeText.length > maxLength ? `${safeText.slice(0, maxLength)}\n...（內容過長已截斷，完整內容請查看 Email 或後台紀錄）` : safeText;
+}
 
 function accumulateEntries(entries) {
   const result = {};
