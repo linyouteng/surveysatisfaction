@@ -417,7 +417,6 @@ function buildLineMessage({ siteName, customerName, submittedAtDisplay, followUp
     : "";
 
   return `${title}
-${siteName}
 
 姓名：${customerName || "未填姓名"}
 清洗項目：${serviceType}
