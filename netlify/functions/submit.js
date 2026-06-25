@@ -1,3 +1,5 @@
+import { getStore } from "@netlify/blobs";
+
 // netlify/functions/submit.js
 // 信件內容美化版本（移除技術資訊與 JSON，時間顯示為台灣時間）
 // 通知用環境變數：BREVO_API_KEY, TO_EMAIL, FROM_EMAIL, LINE_CHANNEL_ACCESS_TOKEN, LINE_ADMIN_USER_ID
@@ -55,6 +57,20 @@ export default async (req, context) => {
     // 通知設定改成「有設定就送，沒設定或失敗都不擋客人送出」
     const brevoConfigured = Boolean(apiKey && toEmail && fromEmail);
     const lineConfigured = Boolean(lineChannelAccessToken && lineAdminUserId);
+
+    // ---- 從通知設定頁讀取開關狀態 ----
+    // 若讀取失敗，會使用預設值：Email 開啟、LINE 開啟、新問卷通知開啟、LINE 22:00~07:00 靜音。
+    const notificationSettings = await loadNotificationSettings();
+    const emailNotificationsEnabled =
+      brevoConfigured &&
+      notificationSettings.brevoEmailEnabled &&
+      notificationSettings.newSurveyEmailEnabled;
+
+    const lineNotificationDisabled =
+      !notificationSettings.linePushEnabled || !notificationSettings.newSurveyLineEnabled;
+    const lineCurrentlyQuiet = isLineQuietNow(notificationSettings);
+    const lineNotificationsEnabled =
+      lineConfigured && !lineNotificationDisabled && !lineCurrentlyQuiet;
 
     const customerName =
       data.customer_name || data.name || data.line || data["姓名"] || "";
@@ -295,13 +311,23 @@ export default async (req, context) => {
     });
 
     const notificationResults = {
-      brevo: brevoConfigured ? "pending" : "skipped_missing_env",
-      line: lineConfigured ? "pending" : "skipped_missing_env",
+      brevo: brevoConfigured
+        ? emailNotificationsEnabled
+          ? "pending"
+          : "skipped_disabled"
+        : "skipped_missing_env",
+      line: lineConfigured
+        ? lineNotificationDisabled
+          ? "skipped_disabled"
+          : lineCurrentlyQuiet
+            ? "skipped_quiet_hours"
+            : "pending"
+        : "skipped_missing_env",
     };
 
     const tasks = [];
 
-    if (brevoConfigured) {
+    if (emailNotificationsEnabled) {
       tasks.push(
         sendBrevoEmail({ apiKey, fromEmail, toEmail, siteName, subject, htmlContent })
           .then(() => {
@@ -314,7 +340,7 @@ export default async (req, context) => {
       );
     }
 
-    if (lineConfigured) {
+    if (lineNotificationsEnabled) {
       tasks.push(
         sendLinePush({
           channelAccessToken: lineChannelAccessToken,
@@ -353,6 +379,82 @@ export default async (req, context) => {
     });
   }
 };
+
+
+const DEFAULT_NOTIFICATION_SETTINGS = {
+  brevoEmailEnabled: true,
+  linePushEnabled: true,
+  newSurveyEmailEnabled: true,
+  newSurveyLineEnabled: true,
+  lineQuietHoursEnabled: true,
+  lineQuietStart: "22:00",
+  lineQuietEnd: "07:00",
+};
+
+async function loadNotificationSettings() {
+  try {
+    const store = getStore("survey-notification-settings");
+    const saved = await store.get("notification-settings", { type: "json" });
+    return normalizeNotificationSettings(saved || {});
+  } catch (err) {
+    console.error("Load notification settings failed, using defaults:", err);
+    return { ...DEFAULT_NOTIFICATION_SETTINGS };
+  }
+}
+
+function normalizeNotificationSettings(input = {}) {
+  return {
+    brevoEmailEnabled: toBoolean(input.brevoEmailEnabled, DEFAULT_NOTIFICATION_SETTINGS.brevoEmailEnabled),
+    linePushEnabled: toBoolean(input.linePushEnabled, DEFAULT_NOTIFICATION_SETTINGS.linePushEnabled),
+    newSurveyEmailEnabled: toBoolean(input.newSurveyEmailEnabled, DEFAULT_NOTIFICATION_SETTINGS.newSurveyEmailEnabled),
+    newSurveyLineEnabled: toBoolean(input.newSurveyLineEnabled, DEFAULT_NOTIFICATION_SETTINGS.newSurveyLineEnabled),
+    lineQuietHoursEnabled: toBoolean(input.lineQuietHoursEnabled, DEFAULT_NOTIFICATION_SETTINGS.lineQuietHoursEnabled),
+    lineQuietStart: normalizeTime(input.lineQuietStart, DEFAULT_NOTIFICATION_SETTINGS.lineQuietStart),
+    lineQuietEnd: normalizeTime(input.lineQuietEnd, DEFAULT_NOTIFICATION_SETTINGS.lineQuietEnd),
+  };
+}
+
+function toBoolean(value, fallback) {
+  if (typeof value === "boolean") return value;
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return fallback;
+}
+
+function normalizeTime(value, fallback) {
+  const text = String(value || "").trim();
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(text) ? text : fallback;
+}
+
+function isLineQuietNow(settings) {
+  if (!settings.lineQuietHoursEnabled) return false;
+
+  const current = getTaiwanCurrentMinutes();
+  const start = timeToMinutes(settings.lineQuietStart);
+  const end = timeToMinutes(settings.lineQuietEnd);
+
+  if (start === end) return false;
+  if (start < end) return current >= start && current < end;
+  return current >= start || current < end;
+}
+
+function getTaiwanCurrentMinutes() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Taipei",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+
+  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+  return hour * 60 + minute;
+}
+
+function timeToMinutes(value) {
+  const [h, m] = String(value || "00:00").split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
 
 
 async function sendBrevoEmail({ apiKey, fromEmail, toEmail, siteName, subject, htmlContent }) {

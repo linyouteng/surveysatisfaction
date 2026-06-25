@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>通知設定｜自然大叔清洗服務</title>
+  <meta name="description" content="管理 Brevo Email 與 LINE 推播通知開關，包含新問卷通知與 LINE 夜間靜音時間設定。" />
+<link href="https://res.cloudinary.com/dijzndzw2/image/upload/v1757176751/logo-3_hddq08.png" rel="icon" type="image/png"/>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --text: #132238;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --primary: #2563eb;
+      --primary-soft: #dbeafe;
+      --success: #16a34a;
+      --warning: #f59e0b;
+      --danger: #dc2626;
+      --shadow: 0 18px 45px rgba(15, 23, 42, 0.10);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, .14), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(245, 158, 11, .14), transparent 34%),
+        var(--bg);
+      padding: 24px 14px 52px;
+    }
+
+    body.dark {
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #f8fafc;
+      --muted: #a8b3c5;
+      --line: #263244;
+      --primary-soft: rgba(37, 99, 235, .18);
+      --shadow: 0 18px 45px rgba(0, 0, 0, .35);
+    }
+
+    .wrap {
+      width: min(980px, 100%);
+      margin: 0 auto;
+    }
+
+    .hero {
+      border-radius: 28px;
+      background: linear-gradient(135deg, rgba(37, 99, 235, .95), rgba(14, 165, 233, .86));
+      color: #fff;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero:after {
+      content: "";
+      position: absolute;
+      width: 240px;
+      height: 240px;
+      right: -90px;
+      top: -70px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .16);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .16);
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(27px, 4vw, 42px);
+      letter-spacing: .02em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 720px;
+      line-height: 1.75;
+      color: rgba(255,255,255,.88);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 330px;
+      gap: 18px;
+      margin-top: 18px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .card-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .card-header small {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .content { padding: 8px 20px 20px; }
+
+    .setting-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 17px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .setting-row:last-child { border-bottom: 0; }
+
+    .setting-title {
+      font-weight: 760;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .setting-desc {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .pill {
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      white-space: nowrap;
+    }
+
+    .switch {
+      position: relative;
+      width: 58px;
+      height: 34px;
+      flex: none;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #cbd5e1;
+      transition: .2s;
+      border-radius: 999px;
+    }
+
+    .slider:before {
+      content: "";
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      left: 4px;
+      bottom: 4px;
+      border-radius: 50%;
+      background: #fff;
+      transition: .2s;
+      box-shadow: 0 2px 8px rgba(15,23,42,.25);
+    }
+
+    .switch input:checked + .slider { background: var(--success); }
+    .switch input:checked + .slider:before { transform: translateX(24px); }
+
+    .time-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 13px;
+      max-width: 420px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 650;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    input[type="time"], input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 12px 13px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: rgba(37, 99, 235, .6);
+      box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+    }
+
+    .side { display: grid; gap: 18px; }
+
+    .status-card {
+      padding: 18px 18px 16px;
+    }
+
+    .status-title {
+      font-weight: 800;
+      margin-bottom: 12px;
+      font-size: 17px;
+    }
+
+    .status-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .status-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #94a3b8;
+      flex: none;
+    }
+
+    .status-dot.on { background: var(--success); }
+    .status-dot.off { background: var(--danger); }
+    .status-dot.warn { background: var(--warning); }
+
+    .notice {
+      margin-top: 14px;
+      padding: 12px 13px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.65;
+      background: var(--primary-soft);
+      color: var(--text);
+      border: 1px solid rgba(37,99,235,.2);
+    }
+
+    .token-panel {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding: 14px;
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+      background: rgba(148, 163, 184, .08);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    button, .link-btn {
+      border: 0;
+      cursor: pointer;
+      border-radius: 15px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 750;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: rgba(148, 163, 184, .16);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .btn-danger {
+      background: rgba(220, 38, 38, .10);
+      color: var(--danger);
+      border: 1px solid rgba(220,38,38,.24);
+    }
+
+    .message {
+      margin-top: 12px;
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      padding: 2px 6px;
+      border-radius: 8px;
+      background: rgba(148,163,184,.18);
+      font-size: 13px;
+    }
+
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+      .card-header { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (max-width: 560px) {
+      body { padding: 14px 10px 36px; }
+      .hero { padding: 22px 18px; border-radius: 23px; }
+      .content, .card-header { padding-left: 15px; padding-right: 15px; }
+      .setting-row { grid-template-columns: 1fr; }
+      .time-box { grid-template-columns: 1fr; }
+      .switch { justify-self: start; }
+      button, .link-btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div class="badge">通知中心設定</div>
+      <h1>Brevo Email 與 LINE 推播通知</h1>
+      <p>在這裡可以控制問卷送出後是否要寄出 Email、是否要發送 LINE 推播，以及 LINE 夜間靜音時段。預設靜音時間為 22:00 ～ 07:00。</p>
+    </section>
+
+    <section class="grid">
+      <form class="card" id="settingsForm">
+        <div class="card-header">
+          <div>
+            <h2>通知開關</h2>
+            <small>總開關會影響整個服務；新問卷通知開關只影響「顧客送出問卷」這一種通知。</small>
+          </div>
+        </div>
+
+        <div class="content">
+          <div class="token-panel">
+            <div class="field">
+              <label for="adminToken">管理 Token（若後台有設定 NOTIFICATION_SETTINGS_TOKEN 才需要）</label>
+              <input id="adminToken" type="password" autocomplete="current-password" placeholder="輸入管理 Token 後可讀取 / 儲存設定" />
+            </div>
+            <button class="btn-secondary" id="saveTokenBtn" type="button">儲存 Token 到此瀏覽器</button>
+          </div>
+
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Brevo Email 通知總開關 <span class="pill">Email Master</span></div>
+              <div class="setting-desc">關閉後，所有 Brevo Email 通知都不會寄出，即使 Email API 環境變數已設定完成也會停用。</div>
+            </div>
+            <label class="switch" aria-label="Brevo Email 通知總開關">
+              <input type="checkbox" id="brevoEmailEnabled" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">LINE 推播通知總開關 <span class="pill">LINE Master</span></div>
+              <div class="setting-desc">關閉後，所有 LINE Push Message 通知都不會發送。</div>
+            </div>
+            <label class="switch" aria-label="LINE 推播通知總開關">
+              <input type="checkbox" id="linePushEnabled" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">新問卷通知：Email</div>
+              <div class="setting-desc">顧客送出滿意度問卷後，是否寄送完整問卷內容到管理者信箱。</div>
+            </div>
+            <label class="switch" aria-label="新問卷通知 Email">
+              <input type="checkbox" id="newSurveyEmailEnabled" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">新問卷通知：LINE</div>
+              <div class="setting-desc">顧客送出滿意度問卷後，是否將摘要與低分警訊推播到 LINE 管理者帳號。</div>
+            </div>
+            <label class="switch" aria-label="新問卷通知 LINE">
+              <input type="checkbox" id="newSurveyLineEnabled" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">LINE 夜間靜音模式 <span class="pill">預設 22:00 ～ 07:00</span></div>
+              <div class="setting-desc">開啟後，指定時段內不發送 LINE 推播，避免半夜打擾；Email 仍可照常寄出。</div>
+              <div class="time-box" id="quietTimeBox">
+                <div class="field">
+                  <label for="lineQuietStart">靜音開始</label>
+                  <input type="time" id="lineQuietStart" value="22:00" />
+                </div>
+                <div class="field">
+                  <label for="lineQuietEnd">靜音結束</label>
+                  <input type="time" id="lineQuietEnd" value="07:00" />
+                </div>
+              </div>
+            </div>
+            <label class="switch" aria-label="LINE 夜間靜音模式">
+              <input type="checkbox" id="lineQuietHoursEnabled" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button class="btn-primary" type="submit">儲存通知設定</button>
+            <button class="btn-secondary" id="loadBtn" type="button">重新讀取設定</button>
+            <button class="btn-danger" id="resetBtn" type="button">恢復預設值</button>
+            <a class="link-btn btn-secondary" href="index.html">返回問卷頁</a>
+          </div>
+          <div class="message" id="message"></div>
+        </div>
+      </form>
+
+      <aside class="side">
+        <div class="card status-card">
+          <div class="status-title">目前通知狀態</div>
+          <ul class="status-list">
+            <li>Brevo Email <span class="status-dot" id="dotEmail"></span></li>
+            <li>LINE 推播 <span class="status-dot" id="dotLine"></span></li>
+            <li>新問卷 Email <span class="status-dot" id="dotSurveyEmail"></span></li>
+            <li>新問卷 LINE <span class="status-dot" id="dotSurveyLine"></span></li>
+            <li>夜間靜音 <span class="status-dot" id="dotQuiet"></span></li>
+          </ul>
+          <div class="notice" id="quietNotice">目前 LINE 靜音時段：22:00 ～ 07:00</div>
+        </div>
+
+        <div class="card status-card">
+          <div class="status-title">部署提醒</div>
+          <div class="setting-desc">
+            Email 仍需設定 <code>BREVO_API_KEY</code>、<code>TO_EMAIL</code>、<code>FROM_EMAIL</code>。<br><br>
+            LINE 仍需設定 <code>LINE_CHANNEL_ACCESS_TOKEN</code>、<code>LINE_ADMIN_USER_ID</code>。<br><br>
+            建議另外設定 <code>NOTIFICATION_SETTINGS_TOKEN</code>，避免任何人都能修改通知開關。
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      document.body.classList.add("dark");
+    }
+
+    const defaultSettings = {
+      brevoEmailEnabled: true,
+      linePushEnabled: true,
+      newSurveyEmailEnabled: true,
+      newSurveyLineEnabled: true,
+      lineQuietHoursEnabled: true,
+      lineQuietStart: "22:00",
+      lineQuietEnd: "07:00"
+    };
+
+    const ids = Object.keys(defaultSettings);
+    const message = document.getElementById("message");
+    const adminToken = document.getElementById("adminToken");
+
+    adminToken.value = localStorage.getItem("notificationSettingsToken") || "";
+
+    function getSettingsFromForm() {
+      return {
+        brevoEmailEnabled: document.getElementById("brevoEmailEnabled").checked,
+        linePushEnabled: document.getElementById("linePushEnabled").checked,
+        newSurveyEmailEnabled: document.getElementById("newSurveyEmailEnabled").checked,
+        newSurveyLineEnabled: document.getElementById("newSurveyLineEnabled").checked,
+        lineQuietHoursEnabled: document.getElementById("lineQuietHoursEnabled").checked,
+        lineQuietStart: document.getElementById("lineQuietStart").value || "22:00",
+        lineQuietEnd: document.getElementById("lineQuietEnd").value || "07:00"
+      };
+    }
+
+    function applySettings(settings) {
+      const s = { ...defaultSettings, ...(settings || {}) };
+      ids.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el.type === "checkbox") el.checked = Boolean(s[id]);
+        else el.value = s[id];
+      });
+      updateStatus();
+    }
+
+    function setDot(id, on, warn = false) {
+      const dot = document.getElementById(id);
+      dot.className = "status-dot " + (warn ? "warn" : on ? "on" : "off");
+    }
+
+    function isQuietNow(settings) {
+      if (!settings.lineQuietHoursEnabled) return false;
+      const now = new Date();
+      const current = now.getHours() * 60 + now.getMinutes();
+      const start = timeToMinutes(settings.lineQuietStart);
+      const end = timeToMinutes(settings.lineQuietEnd);
+      if (start === end) return false;
+      if (start < end) return current >= start && current < end;
+      return current >= start || current < end;
+    }
+
+    function timeToMinutes(value) {
+      const [h, m] = String(value || "00:00").split(":").map(Number);
+      return (h || 0) * 60 + (m || 0);
+    }
+
+    function updateStatus() {
+      const s = getSettingsFromForm();
+      const quietNow = isQuietNow(s);
+      setDot("dotEmail", s.brevoEmailEnabled);
+      setDot("dotLine", s.linePushEnabled && !quietNow, quietNow);
+      setDot("dotSurveyEmail", s.brevoEmailEnabled && s.newSurveyEmailEnabled);
+      setDot("dotSurveyLine", s.linePushEnabled && s.newSurveyLineEnabled && !quietNow, quietNow);
+      setDot("dotQuiet", s.lineQuietHoursEnabled, quietNow);
+      document.getElementById("quietNotice").textContent = s.lineQuietHoursEnabled
+        ? `目前 LINE 靜音時段：${s.lineQuietStart} ～ ${s.lineQuietEnd}${quietNow ? "（現在正在靜音中）" : ""}`
+        : "LINE 夜間靜音模式已關閉。";
+      document.getElementById("quietTimeBox").style.opacity = s.lineQuietHoursEnabled ? "1" : ".45";
+    }
+
+    function authHeaders() {
+      const token = adminToken.value.trim();
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    }
+
+    async function loadSettings() {
+      message.textContent = "正在讀取設定...";
+      try {
+        const res = await fetch("/api/settings", { headers: authHeaders() });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.error || `讀取失敗 (${res.status})`);
+        applySettings(json.settings || defaultSettings);
+        message.textContent = "已讀取目前設定。";
+      } catch (err) {
+        applySettings(defaultSettings);
+        message.textContent = `無法讀取後端設定，先顯示預設值：${err.message}`;
+      }
+    }
+
+    async function saveSettings(event) {
+      event.preventDefault();
+      const settings = getSettingsFromForm();
+      message.textContent = "正在儲存設定...";
+      try {
+        const res = await fetch("/api/settings", {
+          method: "POST",
+          headers: { "content-type": "application/json", ...authHeaders() },
+          body: JSON.stringify(settings)
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.error || `儲存失敗 (${res.status})`);
+        applySettings(json.settings || settings);
+        message.textContent = "通知設定已儲存完成。";
+      } catch (err) {
+        localStorage.setItem("notificationSettingsDraft", JSON.stringify(settings));
+        message.textContent = `後端儲存失敗，已暫存在此瀏覽器：${err.message}`;
+      }
+    }
+
+    document.getElementById("settingsForm").addEventListener("submit", saveSettings);
+    document.getElementById("loadBtn").addEventListener("click", loadSettings);
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      applySettings(defaultSettings);
+      message.textContent = "已恢復畫面預設值，按下「儲存通知設定」後才會寫入後端。";
+    });
+    document.getElementById("saveTokenBtn").addEventListener("click", () => {
+      localStorage.setItem("notificationSettingsToken", adminToken.value.trim());
+      message.textContent = "Token 已儲存在此瀏覽器。";
+    });
+
+    document.querySelectorAll("input").forEach((el) => el.addEventListener("change", updateStatus));
+
+    const draft = localStorage.getItem("notificationSettingsDraft");
+    if (draft) {
+      try { applySettings(JSON.parse(draft)); } catch { applySettings(defaultSettings); }
+    } else {
+      applySettings(defaultSettings);
+    }
+    loadSettings();
+  </script>
+</body>
+</html>
