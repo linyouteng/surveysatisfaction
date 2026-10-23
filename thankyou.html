@@ -256,6 +256,40 @@
       }
     }
   </style>
+  <!-- Google Analytics 4：只追蹤顧客問卷與感謝頁，不追蹤內部通知設定頁。 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y1M01156XR"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { window.dataLayer.push(arguments); }
+    gtag('js', new Date());
+    (function () {
+      // 移除 URL 查詢參數與片段，避免意外把網址中的資料送往 GA4。
+      function cleanUrl(value) {
+        try {
+          var u = new URL(value, window.location.origin);
+          return u.origin + u.pathname;
+        } catch (e) {
+          return window.location.origin + window.location.pathname;
+        }
+      }
+      var safeReferrer = '';
+      try {
+        if (document.referrer) safeReferrer = cleanUrl(document.referrer);
+      } catch (e) {}
+      gtag('config', 'G-Y1M01156XR', {
+        page_location: cleanUrl(window.location.href),
+        page_referrer: safeReferrer,
+        send_page_view: true,
+        allow_google_signals: false,
+        allow_ad_personalization_signals: false
+      });
+    })();
+    window.surveyGa4Track = function (eventName, params) {
+      if (typeof window.gtag !== 'function') return;
+      // 僅送出固定事件名稱與非個資分類，不傳送問卷答案或表單欄位內容。
+      window.gtag('event', eventName, Object.assign({ survey_type: 'customer_satisfaction' }, params || {}));
+    };
+  </script>
 </head>
 <body>
   <main>
@@ -330,6 +364,44 @@
       } catch (e) {
         // ignore
       }
+    })();
+  </script>
+
+  <script>
+    (function () {
+      function trackSurveyEvent(eventName, params) {
+        if (typeof window.surveyGa4Track === "function") {
+          window.surveyGa4Track(eventName, params || {});
+        }
+      }
+
+      // 只有問卷 API 已回傳成功並由表單頁設定旗標，才記錄成功送出。
+      // 直接開啟 /thankyou.html 或重新整理不會重複計入成功送出。
+      try {
+        var key = "naturaluncle_survey_submission_success";
+        if (window.sessionStorage.getItem(key) === "1") {
+          window.sessionStorage.removeItem(key);
+          trackSurveyEvent("survey_submit_success", { submit_status: "success" });
+        }
+      } catch (e) {}
+
+      document.addEventListener("click", function (event) {
+        var link = event.target && event.target.closest ? event.target.closest("a[href]") : null;
+        if (!link) return;
+        var href = link.getAttribute("href") || "";
+        var eventName = "";
+        var linkType = "";
+        if (href.indexOf("g.page/r/") !== -1 || href.indexOf("google.com/maps") !== -1) {
+          eventName = "survey_google_review_click"; linkType = "google_review";
+        } else if (href.indexOf("lin.ee/") !== -1) {
+          eventName = "survey_line_click"; linkType = "line";
+        } else if (href.indexOf("naturaluncle.com") !== -1) {
+          eventName = "survey_home_click"; linkType = "official_website";
+        } else if (href.indexOf("facebook.com") !== -1) {
+          eventName = "survey_facebook_click"; linkType = "facebook";
+        }
+        if (eventName) trackSurveyEvent(eventName, { link_type: linkType, link_area: "thankyou_page" });
+      });
     })();
   </script>
 </body>

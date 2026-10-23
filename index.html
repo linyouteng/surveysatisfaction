@@ -865,6 +865,40 @@
       margin-top: 4px;
     }
   </style>
+  <!-- Google Analytics 4：只追蹤顧客問卷與感謝頁，不追蹤內部通知設定頁。 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y1M01156XR"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { window.dataLayer.push(arguments); }
+    gtag('js', new Date());
+    (function () {
+      // 移除 URL 查詢參數與片段，避免意外把網址中的資料送往 GA4。
+      function cleanUrl(value) {
+        try {
+          var u = new URL(value, window.location.origin);
+          return u.origin + u.pathname;
+        } catch (e) {
+          return window.location.origin + window.location.pathname;
+        }
+      }
+      var safeReferrer = '';
+      try {
+        if (document.referrer) safeReferrer = cleanUrl(document.referrer);
+      } catch (e) {}
+      gtag('config', 'G-Y1M01156XR', {
+        page_location: cleanUrl(window.location.href),
+        page_referrer: safeReferrer,
+        send_page_view: true,
+        allow_google_signals: false,
+        allow_ad_personalization_signals: false
+      });
+    })();
+    window.surveyGa4Track = function (eventName, params) {
+      if (typeof window.gtag !== 'function') return;
+      // 僅送出固定事件名稱與非個資分類，不傳送問卷答案或表單欄位內容。
+      window.gtag('event', eventName, Object.assign({ survey_type: 'customer_satisfaction' }, params || {}));
+    };
+  </script>
 </head>
 <body>
   <main>
@@ -894,7 +928,8 @@
         <p class="note">
           <strong>填寫時間：</strong>約需 1–2 分鐘完成。<br />
           填答內容僅供自然大叔內部檢視與服務品質改善使用，
-          不會對外公開或作其他商業用途，請放心填寫。
+          不會對外公開或作其他商業用途，請放心填寫。<br /><br />
+          <strong>網站使用分析：</strong>本網站使用 Google Analytics 4（GA4）統計頁面瀏覽、開始填寫、送出成功及按鈕點擊等使用情形，以改善問卷體驗。分析事件不會傳送您的姓名、聯絡資料、問卷答案或自由填寫內容。
         </p>
 
         <div class="progress-wrapper">
@@ -1409,6 +1444,13 @@
       }
 
       var form = document.getElementById("surveyForm");
+      var surveyStartedTracked = false;
+      var submissionSuccessStorageKey = "naturaluncle_survey_submission_success";
+      function trackSurveyEvent(eventName, params) {
+        if (typeof window.surveyGa4Track === "function") {
+          window.surveyGa4Track(eventName, params || {});
+        }
+      }
       var progressBar = document.getElementById("progressBar");
       var progressContainer = document.getElementById("progressContainer");
       var backdrop = document.getElementById("loadingBackdrop");
@@ -1417,6 +1459,33 @@
 
       if (!form) return;
 
+      // 第一次實際操作問卷時只記錄一次，不讀取或傳送欄位值。
+      function trackSurveyStart(event) {
+        if (surveyStartedTracked || !event || !event.target) return;
+        if (event.target.name === "bot-field" || event.target.type === "submit") return;
+        if (!event.target.matches("input, textarea, select")) return;
+        surveyStartedTracked = true;
+        trackSurveyEvent("survey_form_start");
+      }
+      form.addEventListener("input", trackSurveyStart, true);
+      form.addEventListener("change", trackSurveyStart, true);
+
+      // 只記錄固定的連結類型，不把完整網址或任何表單資料送到 GA4。
+      document.addEventListener("click", function (event) {
+        var link = event.target && event.target.closest ? event.target.closest("a[href]") : null;
+        if (!link) return;
+        var href = link.getAttribute("href") || "";
+        var eventName = "";
+        var linkType = "";
+        if (href.indexOf("lin.ee/") !== -1) {
+          eventName = "survey_line_click"; linkType = "line";
+        } else if (href.indexOf("naturaluncle.com") !== -1) {
+          eventName = "survey_home_click"; linkType = "official_website";
+        } else if (href.indexOf("facebook.com") !== -1) {
+          eventName = "survey_facebook_click"; linkType = "facebook";
+        }
+        if (eventName) trackSurveyEvent(eventName, { link_type: linkType, link_area: "survey_page" });
+      });
 
       function formatCurrency(amount) {
         return "NT$ " + Math.round(amount).toLocaleString("zh-TW");
@@ -1621,6 +1690,12 @@
           return;
         }
 
+        trackSurveyEvent("survey_submit_attempt");
+        // 清除同一分頁可能殘留的舊成功旗標，避免失敗重試被誤算成成功。
+        try {
+          window.sessionStorage.removeItem(submissionSuccessStorageKey);
+        } catch (e) {}
+
         if (backdrop) {
           backdrop.classList.add("show");
           backdrop.setAttribute("aria-hidden", "false");
@@ -1640,6 +1715,13 @@
             return res.json();
           })
           .then(function (data) {
+            if (!data || data.ok !== true) {
+              throw new Error("Survey submission was not confirmed");
+            }
+            // 由 API 明確回傳成功後才設定一次性旗標；thankyou 頁會消耗旗標並記錄成功事件。
+            try {
+              window.sessionStorage.setItem(submissionSuccessStorageKey, "1");
+            } catch (e) {}
             var redirect =
               form.getAttribute("data-redirect") ||
               (data && data.redirect) ||
@@ -1652,6 +1734,7 @@
             }
           })
           .catch(function () {
+            trackSurveyEvent("survey_submit_error", { error_type: "request_failed" });
             if (backdrop) {
               backdrop.classList.remove("show");
               backdrop.setAttribute("aria-hidden", "true");

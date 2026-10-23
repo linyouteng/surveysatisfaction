@@ -49,3 +49,12 @@ LINE 推播：
 - `robots.txt` 設定為不允許搜尋引擎爬取全站，因此本系統不需要提交 Sitemap 到 Google Search Console。
 - `thankyou.html` 與 `notification-settings.html` 亦明確設定為不建立索引。
 - 強烈建議在 Netlify 環境變數設定 `NOTIFICATION_SETTINGS_TOKEN`，避免通知設定 API 在未設定 Token 時可被未授權修改。
+
+
+## GA4 追蹤（2026-10-23）
+
+- 問卷頁與感謝頁接入 GA4：`G-Y1M01156XR`。
+- 追蹤問卷開始、送出嘗試／錯誤／成功，以及 LINE、官方網站、Facebook、Google 評價連結點擊。
+- 不傳送問卷答案、姓名、聯絡資料或自由填寫內容至 GA4。
+- `notification-settings.html` 內部設定頁刻意不安裝 GA4。
+- 部署與驗收步驟請見 `GA4追蹤部署與驗收說明.md`。
